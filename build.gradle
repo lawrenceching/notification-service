@@ -2,6 +2,7 @@ plugins {
 	id 'org.springframework.boot' version '2.4.1'
 	id 'io.spring.dependency-management' version '1.0.10.RELEASE'
 	id 'java'
+	id 'org.jetbrains.kotlin.jvm' version '1.4.21'
 }
 
 group = 'me.imlc'
@@ -20,8 +21,35 @@ dependencies {
 	implementation 'com.github.docker-java:docker-java-transport-okhttp:3.2.7'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
+	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+	runtimeClasspath files("build/classes/kotlin/main")
+}
+
+sourceSets {
+	main.kotlin.srcDirs += 'src/main/kotlin'
+	main.java.srcDirs += 'src/main/java'
 }
 
 test {
 	useJUnitPlatform()
+}
+compileKotlin {
+	kotlinOptions {
+		jvmTarget = "15"
+	}
+}
+compileTestKotlin {
+	kotlinOptions {
+		jvmTarget = "15"
+	}
+}
+
+kotlin {
+	sourceSets {
+		jvmMain {
+			dependencies {
+				implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.4.2'
+			}
+		}
+	}
 }
