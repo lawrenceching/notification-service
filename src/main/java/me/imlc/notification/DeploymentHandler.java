@@ -1,9 +1,12 @@
 package me.imlc.notification;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Image;
+import com.github.dockerjava.api.model.PullResponseItem;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,11 +28,13 @@ public class DeploymentHandler {
   private static Gson gson = new GsonBuilder().create();
   private DockerClient dockerClient;
   private Authenticator authenticator;
+  private Docker docker;
 
   public DeploymentHandler(@Autowired DockerClient dockerClient,
       @Autowired Authenticator authenticator) {
     this.dockerClient = dockerClient;
     this.authenticator = authenticator;
+    this.docker = new Docker(this.dockerClient);
   }
 
   private Mono<ServerResponse> requireNonBlank(JsonObject json, String ... names) {
@@ -57,7 +62,7 @@ public class DeploymentHandler {
 
   public Mono<ServerResponse> dockerUpgrade(ServerRequest request) {
     List<String> authorization = request.headers().header("TOKEN");
-    if(authorization.isEmpty() || authenticator.authenticate(authorization.get(0))) {
+    if(authorization.isEmpty() || !authenticator.authenticate(authorization.get(0))) {
       return response(401, "Unauthenticated");
     }
 
@@ -94,6 +99,22 @@ public class DeploymentHandler {
             dockerClient.removeContainerCmd(containerId).exec();
           }
 
+          List<Image> images = dockerClient.listImagesCmd()
+              .withImageNameFilter(image)
+              .withShowAll(true)
+              .exec();
+
+          String repoTag = toRepoTag(image);
+
+          boolean found = images.stream()
+              .map(i -> i.getRepoTags())
+              .map(i -> i[0])
+              .anyMatch(i -> repoTag.equals(i));
+
+          if(!found) {
+            docker.pull(repoTag).join();
+          }
+
           logger.info("Creating new container with name \"{}\"", name);
           CreateContainerResponse createContainerResponse = dockerClient.createContainerCmd(image)
               .withName(name)
@@ -113,5 +134,12 @@ public class DeploymentHandler {
 
     return abc;
 
+  }
+
+  private String toRepoTag(String image) {
+    String[] words = image.split(":");
+    String imageName = words[0];
+    String tag = (words.length < 2 || "".equals(words[1]))? "latest" : words[1];
+    return imageName + ":"  + tag;
   }
 }
