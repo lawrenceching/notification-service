@@ -1,12 +1,13 @@
 package me.imlc.notification;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.HostConfig;
 import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.PullResponseItem;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports.Binding;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -66,7 +67,7 @@ public class DeploymentHandler {
       return response(401, "Unauthenticated");
     }
 
-    Mono<ServerResponse> abc = request.bodyToMono(String.class)
+    Mono<ServerResponse> respMono = request.bodyToMono(String.class)
         .map(body -> {
           return gson.fromJson(body, JsonObject.class);
         })
@@ -112,14 +113,20 @@ public class DeploymentHandler {
               .anyMatch(i -> repoTag.equals(i));
 
           if(!found) {
-            docker.pull(repoTag).join();
+            docker.pull(image).join();
           }
 
           logger.info("Creating new container with name \"{}\"", name);
           CreateContainerResponse createContainerResponse = dockerClient.createContainerCmd(image)
               .withName(name)
-              .withExposedPorts(new ExposedPort(8001))
-              .withPortSpecs("9000")
+              .withHostConfig(
+                  new HostConfig().withPortBindings(
+                      new PortBinding(
+                          new Binding("127.0.0.1", "8001"),
+                          new ExposedPort(9000)
+                      )
+                  )
+              )
               .exec();
 
           String id = createContainerResponse.getId();
@@ -132,7 +139,7 @@ public class DeploymentHandler {
         .flatMap(mono -> mono)
         .single();
 
-    return abc;
+    return respMono;
 
   }
 

@@ -2,6 +2,7 @@ package me.imlc.notification;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.PullResponseItem;
 import com.github.dockerjava.api.model.ResponseItem.ProgressDetail;
 import java.io.Closeable;
@@ -18,14 +19,25 @@ public class Docker {
     this.dockerClient = dockerClient;
   }
 
+  private AuthConfig authConfig() {
+
+    String username = System.getenv("DOCKER_USERNAME");
+    String password = System.getenv("DOCKER_PASSWORD");
+    String registry = System.getenv("DOCKER_REGISTRY");
+
+    AuthConfig authConfig = dockerClient.authConfig()
+        .withUsername(username)
+        .withPassword(password)
+        .withRegistryAddress(registry);
+
+    return authConfig;
+  }
+
   public CompletableFuture pull(String image) {
-    String[] words = image.split(":");
-    log.info("Pulling image {}:{}", words[0], words[1]);
 
     CompletableFuture<Void> f = new CompletableFuture<>();
-    dockerClient.pullImageCmd(words[0])
-        .withRegistry("https://hub.docker.com/")
-        .withTag(words[1])
+    dockerClient.pullImageCmd(image)
+        .withAuthConfig(authConfig())
         .exec(new ResultCallback<PullResponseItem>() {
 
           @Override
@@ -35,7 +47,7 @@ public class Docker {
 
           @Override
           public void onStart(Closeable closeable) {
-            log.debug("onStart()");
+            log.info("Pulling image {}", image);
           }
 
           @Override
@@ -55,6 +67,7 @@ public class Docker {
 
           @Override
           public void onComplete() {
+            log.info("Pulled image {}", image);
             f.complete(null);
           }
         });
