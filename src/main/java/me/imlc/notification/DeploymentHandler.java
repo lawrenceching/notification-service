@@ -24,9 +24,12 @@ public class DeploymentHandler {
   private static Logger logger = LoggerFactory.getLogger(DeploymentHandler.class);
   private static Gson gson = new GsonBuilder().create();
   private DockerClient dockerClient;
+  private Authenticator authenticator;
 
-  public DeploymentHandler(@Autowired DockerClient dockerClient) {
+  public DeploymentHandler(@Autowired DockerClient dockerClient,
+      @Autowired Authenticator authenticator) {
     this.dockerClient = dockerClient;
+    this.authenticator = authenticator;
   }
 
   private Mono<ServerResponse> requireNonBlank(JsonObject json, String ... names) {
@@ -53,6 +56,10 @@ public class DeploymentHandler {
   }
 
   public Mono<ServerResponse> dockerUpgrade(ServerRequest request) {
+    List<String> authorization = request.headers().header("TOKEN");
+    if(authorization.isEmpty() || authenticator.authenticate(authorization.get(0))) {
+      return response(401, "Unauthenticated");
+    }
 
     Mono<ServerResponse> abc = request.bodyToMono(String.class)
         .map(body -> {

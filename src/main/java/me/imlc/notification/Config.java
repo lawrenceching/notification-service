@@ -6,6 +6,7 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.okhttp.OkDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -23,5 +24,10 @@ public class Config {
   @Bean
   public DockerClient dockerClient() {
     return dockerClient;
+  }
+
+  @Bean
+  public Authenticator authenticator(@Value("${token}") String token) {
+    return new Authenticator(token);
   }
 }
