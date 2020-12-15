@@ -2,7 +2,6 @@ package me.imlc.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.gson.Gson;
 import me.imlc.notification.model.DockerDeployment;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,1 +1,4 @@
-rootProject.name = 'notification'
+rootProject.name = 'allInOne'
+include 'apigm'
+include 'notification'
+
