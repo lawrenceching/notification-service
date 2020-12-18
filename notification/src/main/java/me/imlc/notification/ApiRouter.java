@@ -9,18 +9,18 @@ import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 @Configuration
-public class GreetingRouter {
+public class ApiRouter {
 
   @Bean
   public RouterFunction<ServerResponse> route(
-      GreetingHandler greetingHandler
+      WebHookHandler greetingHandler
   ) {
     return RouterFunctions
         .route(
             RequestPredicates
-                .GET("/hello")
-                .and(RequestPredicates.accept(MediaType.TEXT_PLAIN)),
-            greetingHandler::hello);
+                .POST("/webhook/gitee")
+                .and(RequestPredicates.accept(MediaType.APPLICATION_JSON)),
+            greetingHandler::gitee);
   }
 
   @Bean

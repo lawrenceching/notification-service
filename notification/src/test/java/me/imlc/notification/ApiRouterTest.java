@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -18,7 +19,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
-class GreetingRouterTest {
+@TestPropertySource(properties = {"token=HelloWorld"})
+class ApiRouterTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
@@ -28,6 +30,7 @@ class GreetingRouterTest {
 		webTestClient
 				.post()
 					.uri("/api/v1/deployment/docker")
+				.header("TOKEN", TestConfig.TEST_TOKEN)
 				.bodyValue(
 						new DockerDeployment(
 								"",
@@ -41,10 +44,10 @@ class GreetingRouterTest {
 	}
 
 	@Test
-	public void return404NotFoundIfContainerNotFound() {
+	public void return200IfReceiveGiteeWebHook() {
 		webTestClient
 				.post()
-					.uri("/api/v1/deployment/docker")
+				.uri("/webhook/gitee")
 				.bodyValue(
 						new DockerDeployment(
 								"anyName",
@@ -53,12 +56,10 @@ class GreetingRouterTest {
 				)
 				.accept(MediaType.APPLICATION_JSON)
 				.exchange()
-				.expectStatus().isNotFound()
+				.expectStatus()
+				.isOk()
 				.expectBody(String.class)
-				.value(text -> {
-					Response resp = new Gson().fromJson(text, Response.class);
-					assertThat(resp.getMessage()).isEqualTo("Container \"anyName\" not found");
-				});
+				.isEqualTo("");
 	}
 
 }

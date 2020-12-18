@@ -1,4 +1,4 @@
 rootProject.name = 'allInOne'
-include 'apigm'
+include 'apigw'
 include 'notification'
 

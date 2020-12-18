@@ -9,10 +9,18 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 @Component
-public class GreetingHandler {
+public class WebHookHandler {
 
-  public Mono<ServerResponse> hello(ServerRequest request) {
-    return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN)
-        .body(BodyInserters.fromValue("Hello, Spring!"));
+  public Mono<ServerResponse> gitee(ServerRequest request) {
+
+    return request.bodyToMono(String.class)
+        .log()
+        .map((body) -> {
+          return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN)
+              .body(BodyInserters.fromValue(""));
+        })
+        .flatMap(mono -> mono)
+        .single();
+
   }
 }
