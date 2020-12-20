@@ -8,6 +8,7 @@ plugins {
 }
 
 def env = System.getenv()
+def properties = project.getProperties()
 
 group = 'me.imlc'
 version = '0.0.1-SNAPSHOT'
@@ -23,8 +24,8 @@ def getString(String... strs) {
     return null
 }
 
-def username = getString(env['MAVEN_USERNAME'], mavenUsername)
-def password = getString(env['MAVEN_PASSWORD'], mavenPassword)
+def username = getString(env['MAVEN_USERNAME'], properties['mavenUsername'])
+def password = getString(env['MAVEN_PASSWORD'], properties['mavenPassword'])
 
 uploadArchives {
     repositories {
